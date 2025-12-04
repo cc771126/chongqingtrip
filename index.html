@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>重慶自由行 2025 - 行程預覽</title>
+
+  <!-- Tailwind / React / Babel CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .text-shadow-lg { text-shadow: 0 4px 10px rgba(0,0,0,0.65); }
+    .grain {
+      position: relative;
+      overflow: hidden;
+    }
+    .grain::before {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      inset: -50px;
+      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+      mix-blend-mode: soft-light;
+      opacity: 0.55;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-zinc-900 via-slate-900 to-zinc-950 min-h-screen">
+
+  <div id="root"></div>
+
+  <!-- 這裡加上 data-presets -->
+  <script type="text/babel" data-presets="env,react">
+    const { useState } = React;
+
+    // --- 初始資料（之後會放進 state 裡，可被前端編輯） ---
+    const initialTripData = {
+      title: "重慶自由行 2025",
+      subtitle: "重慶 • 6天5夜",
+      dateRange: "2025.12.05 - 12.10",
+      weather: { temp: "8°", desc: "陰天 / 微雨", feel: "5°" },
+
+      // 每日行程
+      days: [
+        {
+          date: "12/05",
+          dayOfWeek: "五",
+          fullDate: "2025-12-05",
+          title: "抵達重慶 • 夜奔解放碑",
+          events: [
+            { time: "19:20", type: "flight", title: "TPE ✈ CKG", desc: "晚班機前往重慶江北機場\n國航 / 華航擇一", icon: "✈️", done: false },
+            { time: "23:00", type: "airport", title: "領行李 & 出關", desc: "依指示領行李，準備前往市區", icon: "🧳", done: false },
+            { time: "23:30", type: "transport", title: "搭乘黃色計程車進城", desc: "T3：先搭電梯到 2F → 6 號出口 → 穿過走廊 → 下手扶梯\n✅ 排隊黃車才是正規\n❌ 一律拒絕黑車喊價", icon: "⚠️", isWarning: true, done: false },
+            { time: "24:00", type: "hotel", title: "CHECK-IN 麗怡飯店", desc: "重慶解放碑洪崖洞店\n青年路 77 號 7 層", icon: "🏨", done: false },
+            { time: "24:20", type: "food", title: "較場口夜市吃宵夜（選擇性）", desc: "步行約 15 分鐘\n好又來酸辣粉、九村烤腦花、鬼包子、冰粉涼蝦", icon: "🌃", done: false }
+          ]
+        },
+        {
+          date: "12/06",
+          dayOfWeek: "六",
+          fullDate: "2025-12-06",
+          title: "解放碑 • 山城步道 • 洪崖洞夜景",
+          events: [
+            { time: "08:00", type: "walk", title: "解放碑晨間散步", desc: "在城市醒來前先跟解放碑打個招呼\n找高處拍『我在重慶』", icon: "📍", done: false },
+            { time: "08:40", type: "food", title: "魯祖廟早市", desc: "小洞天渝師傅特色包\n推薦：醬肉包 + 油茶 + 臘肉糯米糰", icon: "🥟", done: false },
+            { time: "09:40", type: "sight", title: "山城步道 & 山城巷", desc: "從領事巷 / 七星崗一帶開始\n老燒餅、懸崖棧道、垻垻茶、熨斗糕", icon: "🏞️", done: false },
+            { time: "11:00", type: "sight", title: "十八梯老街", desc: "走進防空洞、俯瞰十八梯全貌\n感受最老的山城地形", icon: "🧱", done: false },
+            { time: "12:00", type: "sight", title: "白象居", desc: "步行 15–20 分鐘\n長江索道穿越的打卡機位，眺望江景", icon: "🏯", done: false },
+            { time: "13:30", type: "food", title: "江湖菜 / 湯包午餐", desc: "飯江湖、雙木汣包、糯吉小院擇一", icon: "🍚", done: false },
+            { time: "14:10", type: "sight", title: "湖廣會館戲台與老街", desc: "如有預約可看 14:10–14:50 表演\n古戲台、牌坊、街巷", icon: "🎭", done: false },
+            { time: "16:00", type: "mall", title: "來福士廣場", desc: "逛街吹冷氣、看江景、順便拍照", icon: "🏙️", done: false },
+            { time: "18:00", type: "rest", title: "回飯店小休", desc: "解放碑周邊補體力\n晚上準備吃火鍋", icon: "🛏️", done: false },
+            { time: "19:00", type: "food", title: "春紅火鍋 / 其他火鍋名店", desc: "周末人潮多，建議提前排號\n備案：丁眼鏡、瓜西西、陶婆、丁孃孃", icon: "🔥", done: false },
+            { time: "21:10", type: "sight", title: "洪崖洞夜景 & 千廝門大橋", desc: "❌ 沒有快速通道，不用信黃牛\n推薦站在千廝門大橋看整片洪崖洞", icon: "⚠️", isWarning: true, done: false }
+          ]
+        },
+        {
+          date: "12/07",
+          dayOfWeek: "日",
+          fullDate: "2025-12-07",
+          title: "鵝嶺二廠 • 李子壩 • 觀音橋 • 北倉",
+          events: [
+            { time: "09:00", type: "food", title: "都市廣場附近早餐", desc: "南京湯包 / 愚小面 / 雞蛋漢堡\n看心情選一間街邊小店", icon: "🥣", done: false },
+            { time: "09:40", type: "sight", title: "鵝嶺二廠文創園", desc: "《從你的全世界路過》取景地\n廠房、老窗、階梯上都很出片", icon: "📷", done: false },
+            { time: "11:30", type: "sight", title: "李子壩輕軌穿樓", desc: "2 號線李子壩站\n找好機位等 10–15 分鐘就能拍到", icon: "🚈", done: false },
+            { time: "13:30", type: "food", title: "劉涼粉 / 懷糧生煎", desc: "李子壩附近簡單下午小食\n也可視飽足感跳過", icon: "🥟", done: false },
+            { time: "14:30", type: "sight", title: "觀音橋商圈 &『我在重慶』機位", desc: "搭 2/3 號線轉乘前往\n天橋上拍地標大辣椒與城市天際線", icon: "🏙️", done: false },
+            { time: "15:40", type: "sight", title: "塔坪社區 • 北倉文創園", desc: "老社區＋倉庫改建文創\n咖啡館、小店、Kitty 店、重慶曼哈頓夜景", icon: "🏗️", done: false },
+            { time: "17:30", type: "rest", title: "回飯店 / 或去泡湯按摩", desc: "七沐和風 SPA / 頭道湯藥浴頭療\n讓腿休息一下", icon: "🛀", done: false },
+            { time: "19:00", type: "food", title: "八一好吃街：好又來酸辣粉", desc: "各式小吃集中地\n若前一天沒吃到火鍋也可排今天", icon: "🍜", done: false },
+            { time: "21:00", type: "sight", title: "得意世界 Cyberpunk 夜景", desc: "從八一好吃街步行 7–10 分鐘\n注意 22:00 會熄燈", icon: "🌌", done: false }
+          ]
+        },
+        {
+          date: "12/08",
+          dayOfWeek: "一",
+          fullDate: "2025-12-08",
+          title: "老君洞 • 南山黃桷埡 • 下浩里",
+          events: [
+            { time: "08:30", type: "sight", title: "老君洞（西門進）", desc: "直接打車到西門\n一路八卦台、石刻、山林步道\n西門進西門出，腿力最省", icon: "⛰️", done: false },
+            { time: "10:30", type: "sight", title: "黃桷埡老街 & 三毛故居", desc: "從老君洞步行 5–10 分鐘\n順路逛黃葛古道", icon: "🏘️", done: false },
+            { time: "12:30", type: "food", title: "格外小館 gaagaa", desc: "南山景觀餐廳\n適合慢慢吃、看看長江與城景", icon: "🍷", done: false },
+            { time: "14:00", type: "shop", title: "重百 / 永輝超市買伴手禮", desc: "火鍋底料、陳麻花、怪味胡豆、合川桃片", icon: "🛍️", done: false },
+            { time: "15:30", type: "rest", title: "回飯店放戰利品", desc: "小睡、整理行李\n準備傍晚的南濱路", icon: "🛏️", done: false },
+            { time: "16:30", type: "walk", title: "魯祖廟周邊散步 + 按摩", desc: "Topia 咖啡、人飲甜湯、家居店\n可順便做泰式按摩或肩頸", icon: "☕", done: false },
+            { time: "17:30", type: "sight", title: "龍門浩老街", desc: "叫車前往約 15 分鐘\n江邊坡道、老房子、靜靜走一圈", icon: "🌉", done: false },
+            { time: "19:00", type: "sight", title: "下浩里夜逛 + 愛樂之城機位", desc: "小路多、階梯多，務必穿好走的鞋\n可順路看江邊夜景", icon: "🌙", done: false }
+          ]
+        },
+        {
+          date: "12/09",
+          dayOfWeek: "二",
+          fullDate: "2025-12-09",
+          title: "羅漢寺 • 鴻恩寺銀杏 • 磁器口 • 巴國晚宴",
+          events: [
+            { time: "09:00", type: "food", title: "面咔咔早餐", desc: "干溜豌雜麵、紅湯抄手、椰乳 dirty 咖啡", icon: "🍜", done: false },
+            { time: "10:00", type: "temple", title: "羅漢寺參拜與老城小巷", desc: "門票約 ¥20，含三炷香\n按路線繞一圈不走回頭路，尊重寺規", icon: "🛕", isWarning: true, done: false },
+            { time: "12:30", type: "sight", title: "鴻恩寺森林公園", desc: "東 1 門進入，步行約 15 分鐘到鴻恩閣\n秋季可看銀杏林", icon: "🍂", done: false },
+            { time: "14:30", type: "sight", title: "磁器口古鎮", desc: "老街、寶輪寺、茶館\n人潮多，適合邊走邊吃", icon: "🏘️", done: false },
+            { time: "17:00", type: "show", title: "巴國晚宴 變臉秀", desc: "約 19:00 開場\n邊看川劇邊吃晚餐", icon: "🎭", done: false }
+          ]
+        },
+        {
+          date: "12/10",
+          dayOfWeek: "三",
+          fullDate: "2025-12-10",
+          title: "戴家巷 • 回程",
+          events: [
+            { time: "08:00", type: "hotel", title: "退房 & 行李寄放", desc: "中午前完成退房\n行李先寄在飯店櫃台", icon: "🧳", done: false },
+            { time: "09:10", type: "sight", title: "戴家巷老街 & 貓貓牆", desc: "從飯店步行約 7 分鐘\n崖壁步道、白天版洪崖洞視角", icon: "🐾", done: false },
+            { time: "12:00", type: "walk", title: "回飯店取行李", desc: "簡單梳洗整裝，準備前往機場", icon: "🚶‍♀️", done: false },
+            { time: "13:00", type: "transport", title: "前往江北機場", desc: "可叫車或地鐵轉乘\n預留 1–1.5 小時車程與辦理登機", icon: "🚕", done: false },
+            { time: "15:20", type: "flight", title: "CKG ✈ TPE", desc: "帶著沾到火鍋味的衣服回家", icon: "✈️", done: false }
+          ]
+        }
+      ],
+
+      // 購物清單
+      shopping: {
+        mustBuy: [
+          { name: "火鍋底料", desc: "橋頭、秋霞等品牌，超市買價位約 ¥15–30", checked: false },
+          { name: "陳麻花", desc: "磁器口陳建平麻花，多種口味可混搭", checked: false },
+          { name: "合川桃片", desc: "軟糯甜而不膩，送長輩很安全", checked: false },
+          { name: "怪味胡豆", desc: "渝兄等品牌，當下酒菜剛剛好", checked: false }
+        ],
+        dontBuy: [
+          { name: "金西梅 / 紅心梅", desc: "網紅蜜餞色素重、價高不必特地買", icon: "❌", checked: false },
+          { name: "景區現切水果", desc: "多半溢價嚴重，秤重前先問清楚", icon: "❌", checked: false },
+          { name: "路邊推銷花茶", desc: "高發話術坑點，盡量在正規店買茶葉", icon: "❌", checked: false }
+        ]
+      },
+
+      // 預算
+      budget: {
+        spent: 4253,
+        total: 6000,
+        currency: "CNY",
+        items: [
+          { category: "住宿", name: "麗怡飯店 (5 晚)", cost: 1673, paid: true },
+          { category: "交通", name: "機票 (預估)", cost: 1800, paid: true },
+          { category: "門票", name: "羅漢寺、湖廣會館、老君洞等", cost: 180, paid: false },
+          { category: "餐飲", name: "火鍋、江湖菜、咖啡甜點", cost: 600, paid: false }
+        ],
+        logs: []
+      },
+
+      truths: [
+        { title: "火鍋辣度請尊重", desc: "重慶的『微辣』大約等於外地的中辣～大辣。有腸胃問題記得備藥，點清湯鍋也不丟臉。", type: "warning", checked: false },
+        { title: "8D 城市導航會迷路", desc: "重慶立體交通發達，但導航常分不清樓層與高度。多抬頭看路牌、必要時直接問路人。", type: "info", checked: false },
+        { title: "機場 & 高鐵站黑車多", desc: "凡是主動來搭話的一口價幾乎都是坑。請走正式排隊通道或使用網約車。", type: "danger", checked: false },
+        { title: "兩江遊船不用買 VIP", desc: "VIP 艙位多半是智商稅，在南濱路或兩江小渡就能看到很美夜景。", type: "info", checked: false },
+        { title: "洪崖洞不要硬鑽景區內部", desc: "最美的角度在千廝門大橋與對岸，不必擠進人海裡。", type: "info", checked: false }
+      ],
+
+      guideExtras: {
+        luohansi: [
+          "走主路線，一路順時針參拜，不走回頭路，比較不迷路。",
+          "門票含三炷香，入寺穿著以素色、端莊為主，拍照避免太靠近佛像。",
+          "可以數羅漢、抽小籤、喝禪茶，也有書籤、章卡等小文創。",
+          "寺內二樓圓窗與靛藍牆午後光影很美，但要留意安靜與動線。"
+        ],
+        xiahaoli: [
+          "巷弄多、階梯多又陡，下雨時路滑，鞋子務必好走。",
+          "夜景木橋機位人多，拍照時注意邊邊不要靠太近。",
+          "建議淺色系或裙裝，搭老街黃光與霓虹很好看。",
+          "夜間亮燈約 19:00–22:00，太晚燈會關。"
+        ],
+        drinks: [
+          "李若酸奶：朋友評價一致好喝的酸奶。",
+          "一只酸奶牛：葡萄酸奶慕斯系列是熱門款。",
+          "熊本牛乳 / 冷飲店：街邊也有不少在地飲品。",
+          "特色奶茶店：可找有山城限定口味的嚐鮮。"
+        ],
+        foods: [
+          "海頭堰豆花：每天現磨豆花，口感細嫩。",
+          "重慶小麵：洋河社區、街邊老麵館都可試試。",
+          "重慶炸洋芋、烤腦花、烤鴨肠等路邊攤小吃。",
+          "火鍋 & 江湖菜：盡量選在地人也會去的店。"
+        ]
+      },
+
+      journal: { mood: "" }
+    };
+
+    const ItineraryView = ({ data, setData, activeDay, setActiveDay }) => {
+      const day = data.days[activeDay];
+
+      const toggleEventDone = (eventIndex) => {
+        setData(prev => {
+          const days = [...prev.days];
+          const events = [...days[activeDay].events];
+          const e = events[eventIndex];
+          events[eventIndex] = { ...e, done: !e.done };
+          days[activeDay] = { ...days[activeDay], events };
+          return { ...prev, days };
+        });
+      };
+
+      const editEvent = (eventIndex) => {
+        const current = data.days[activeDay].events[eventIndex];
+        const newTime = window.prompt("時間（例如 09:30）", current.time);
+        if (newTime === null) return;
+        const newTitle = window.prompt("標題", current.title);
+        if (newTitle === null) return;
+        const newDesc = window.prompt("備註 / 說明", current.desc);
+        if (newDesc === null) return;
+
+        setData(prev => {
+          const days = [...prev.days];
+          const events = [...days[activeDay].events];
+          events[eventIndex] = { ...events[eventIndex], time: newTime, title: newTitle, desc: newDesc };
+          days[activeDay] = { ...days[activeDay], events };
+          return { ...prev, days };
+        });
+      };
+
+      return (
+        <div className="flex flex-col h-full">
+          {/* 日期選擇 */}
+          <div className="pt-6 pb-2 px-4 overflow-x-auto no-scrollbar">
+            <div className="flex gap-3">
+              {data.days.map((d, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveDay(index)}
+                  className={`flex flex-col items-center justify-center min-w-[4.3rem] h-18 rounded-2xl border text-sm transition-all duration-300 ${
+                    activeDay === index
+                      ? "bg-emerald-900/90 border-emerald-400/80 text-emerald-50 shadow-lg shadow-emerald-900/40 scale-105"
+                      : "bg-zinc-900/60 border-zinc-700 text-zinc-400 hover:border-emerald-500/40"
+                  }`}
+                >
+                  <span className="text-[11px] mb-0.5 opacity-80">{d.dayOfWeek}</span>
+                  <span className="font-semibold">{d.date}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 當日資訊 */}
+          <div className="px-6 flex-1 overflow-y-auto pb-8 no-scrollbar">
+            <div className="flex items-center justify-between pt-4 pb-2 text-xs text-zinc-400">
+              <div>
+                <div className="font-semibold text-emerald-100">{day.title}</div>
+                <div className="mt-0.5 text-[11px] text-zinc-500">{day.fullDate}</div>
+              </div>
+              <div className="flex items-center gap-2 bg-emerald-900/40 border border-emerald-700/70 px-3 py-1 rounded-full text-emerald-200">
+                <span>☁️ {data.weather.temp}</span>
+                <span className="text-[11px]">{data.weather.desc}</span>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-6">
+              {day.events.map((event, idx) => (
+                <div key={idx} className="flex gap-4 group">
+                  {/* 時間軸 */}
+                  <div className="flex flex-col items-center">
+                    <div className="text-[11px] font-semibold text-zinc-500 w-12 text-right pt-1">
+                      {event.time}
+                    </div>
+                    <div className="w-[2px] flex-1 bg-zinc-800 mt-2 rounded-full relative overflow-hidden">
+                      <div
+                        className={`absolute -left-[5px] top-0 w-3 h-3 rounded-full border border-zinc-900 ${
+                          event.done
+                            ? "bg-emerald-400 shadow shadow-emerald-400/70"
+                            : event.isWarning
+                            ? "bg-amber-500 shadow shadow-amber-500/60"
+                            : "bg-emerald-500/70 group-hover:bg-emerald-400"
+                        } transition-colors`}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* 卡片 */}
+                  <div
+                    className={`flex-1 p-4 rounded-2xl border shadow-sm transition-all grain ${
+                      event.isWarning
+                        ? "bg-gradient-to-br from-[#3b1f1c] via-[#251312] to-[#1a1412] border-red-700/60"
+                        : "bg-gradient-to-br from-[#05090a] via-[#0b1113] to-[#050708] border-zinc-800/80"
+                    } ${event.done ? "opacity-90" : ""}`}
+                  >
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3
+                          className={`font-semibold text-sm leading-snug ${
+                            event.isWarning ? "text-amber-100" : "text-emerald-50"
+                          }`}
+                        >
+                          {event.title}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`px-2 py-1 rounded-lg text-sm ${
+                              event.isWarning
+                                ? "bg-red-900/60 text-amber-200"
+                                : "bg-zinc-900/70 text-emerald-200"
+                            }`}
+                          >
+                            {event.icon}
+                          </div>
+                        </div>
+                      </div>
+                      <p
+                        className={`text-xs whitespace-pre-line leading-relaxed ${
+                          event.isWarning ? "text-amber-200/90" : "text-zinc-300"
+                        }`}
+                      >
+                        {event.desc}
+                      </p>
+
+                      <div className="mt-3 flex justify-between items-center text-[11px] text-zinc-400">
+                        <button
+                          onClick={() => toggleEventDone(idx)}
+                          className={`px-2 py-1 rounded-full border ${
+                            event.done
+                              ? "border-emerald-500/80 text-emerald-200 bg-emerald-900/40"
+                              : "border-zinc-600 hover:border-emerald-400/70"
+                          }`}
+                        >
+                          {event.done ? "✅ 已完成" : "□ 待走"}
+                        </button>
+                        <button
+                          onClick={() => editEvent(idx)}
+                          className="px-2 py-1 rounded-full border border-zinc-600 hover:border-emerald-400/70 hover:text-emerald-200"
+                        >
+                          ✏ 編輯
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="text-center text-[11px] text-zinc-500 pt-6 pb-2">
+                End of Day • 山城在夜裡慢慢亮起來
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ShoppingView = ({ data, setData }) => {
+      const { shopping } = data;
+
+      const toggleMustBuy = (index) => {
+        setData(prev => {
+          const mustBuy = [...prev.shopping.mustBuy];
+          mustBuy[index] = { ...mustBuy[index], checked: !mustBuy[index].checked };
+          return { ...prev, shopping: { ...prev.shopping, mustBuy } };
+        });
+      };
+
+      const toggleDontBuy = (index) => {
+        setData(prev => {
+          const dontBuy = [...prev.shopping.dontBuy];
+          dontBuy[index] = { ...dontBuy[index], checked: !dontBuy[index].checked };
+          return { ...prev, shopping: { ...prev.shopping, dontBuy } };
+        });
+      };
+
+      return (
+        <div className="pt-7 px-6 flex-1 overflow-y-auto pb-10 no-scrollbar">
+          <h2 className="text-xl font-semibold text-emerald-50 mb-1">購物 & 避坑小抄</h2>
+          <p className="text-[11px] text-zinc-500 mb-6">
+            在老街和超市之間穿梭，帶一點山城味道回家。
+          </p>
+
+          <div className="mb-7">
+            <h3 className="text-xs font-semibold text-emerald-300 tracking-[0.2em] uppercase mb-3 flex items-center gap-2">
+              <span className="text-sm">◎</span> 推薦必買（超市 / 老街）
+            </h3>
+            <div className="space-y-3">
+              {shopping.mustBuy.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => toggleMustBuy(idx)}
+                  className="w-full text-left bg-gradient-to-r from-zinc-900/90 via-slate-900/80 to-zinc-900/90 border border-zinc-700/80 rounded-xl px-4 py-3 flex items-center gap-3 grain"
+                >
+                  <div className="w-5 h-5 rounded-full border flex items-center justify-center text-[11px] 
+                    border-emerald-500/60 text-emerald-300 bg-black/40">
+                    {item.checked ? "✓" : "□"}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-emerald-50">
+                      {item.name}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 mt-0.5">
+                      {item.desc}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-7">
+            <h3 className="text-xs font-semibold text-amber-300 tracking-[0.2em] uppercase mb-3 flex items-center gap-2">
+              <span className="text-sm">✕</span> 千萬別買（智商稅雷區）
+            </h3>
+            <div className="space-y-3">
+              {shopping.dontBuy.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => toggleDontBuy(idx)}
+                  className="w-full text-left bg-gradient-to-r from-[#3b1f1c] via-[#261414] to-[#160f0e] border border-red-700/60 rounded-xl px-4 py-3 flex items-center gap-3 grain"
+                >
+                  <span className="text-red-300 text-lg">{item.icon}</span>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-amber-100 flex justify-between items-center">
+                      <span>{item.name}</span>
+                      <span className="text-[10px] text-amber-200/80">
+                        {item.checked ? "已避開 ✔" : "點一下標記已避開"}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-amber-200/80 mt-0.5">
+                      {item.desc}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const BudgetView = ({ data, setData }) => {
+      const { budget, journal } = data;
+      const [logNote, setLogNote] = useState("");
+      const [logAmount, setLogAmount] = useState("");
+
+      const baseSpent = budget.spent || 0;
+      const logs = budget.logs || [];
+      const extraSpent = logs.reduce((sum, log) => sum + (Number(log.amount) || 0), 0);
+      const totalSpent = baseSpent + extraSpent;
+      const remaining = budget.total - totalSpent;
+
+      const handleBaseSpentChange = (e) => {
+        const value = Number(e.target.value) || 0;
+        setData(prev => ({
+          ...prev,
+          budget: { ...prev.budget, spent: value }
+        }));
+      };
+
+      const addLog = () => {
+        const amountNum = Number(logAmount);
+        if (!amountNum) return;
+        setData(prev => ({
+          ...prev,
+          budget: {
+            ...prev.budget,
+            logs: [...(prev.budget.logs || []), { note: logNote || "未命名支出", amount: amountNum }]
+          }
+        }));
+        setLogNote("");
+        setLogAmount("");
+      };
+
+      const deleteLog = (index) => {
+        setData(prev => {
+          const logs = [...(prev.budget.logs || [])];
+          logs.splice(index, 1);
+          return {
+            ...prev,
+            budget: { ...prev.budget, logs }
+          };
+        });
+      };
+
+      const handleMoodChange = (e) => {
+        const mood = e.target.value;
+        setData(prev => ({
+          ...prev,
+          journal: { ...(prev.journal || {}), mood }
+        }));
+      };
+
+      return (
+        <div className="pt-7 px-6 flex-1 overflow-y-auto pb-10 no-scrollbar">
+          <h2 className="text-xl font-semibold text-emerald-50 mb-1">旅費預估 & 今日小帳本</h2>
+          <p className="text-[11px] text-zinc-500 mb-6">
+            粗略抓個安全範圍，剩下的就交給現場的靈感與食慾。
+          </p>
+
+          <div className="relative mb-8 rounded-3xl overflow-hidden grain bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 border border-emerald-700/70 shadow-xl shadow-black/40">
+            <div className="relative z-10 p-6">
+              <div className="text-[11px] text-emerald-200/80 mb-1">總預算（CNY）</div>
+              <div className="text-3xl font-bold text-emerald-50">
+                ¥ {budget.total.toLocaleString()}
+              </div>
+
+              <div className="mt-4">
+                <div className="flex-1 bg-emerald-950/70 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-amber-300 h-full"
+                    style={{
+                      width: `${Math.min(100, (totalSpent / budget.total) * 100).toFixed(0)}%`
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between mt-1.5 text-[11px] text-emerald-200/90">
+                  <span>已支出（含小記錄） ¥{totalSpent}</span>
+                  <span>預估剩餘 ¥{remaining}</span>
+                </div>
+              </div>
+
+              <div className="mt-4 text-[11px] text-emerald-100/80 space-y-1">
+                <div>大項已支出（機票 / 訂金等）：</div>
+                <input
+                  type="number"
+                  value={baseSpent}
+                  onChange={handleBaseSpentChange}
+                  className="w-full bg-black/40 border border-emerald-700/70 rounded-lg px-3 py-1.5 text-emerald-100 text-[12px] focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-7">
+            {budget.items.map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-zinc-900/80 border border-zinc-700/80 rounded-2xl px-4 py-3 flex justify-between items-center grain"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`px-2 py-1 rounded-lg text-xs ${
+                      item.paid
+                        ? "bg-emerald-900/70 text-emerald-200 border border-emerald-600/60"
+                        : "bg-amber-900/60 text-amber-200 border border-amber-700/60"
+                    }`}
+                  >
+                    {item.paid ? "已支付" : "預估"}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-emerald-50">
+                      {item.category}
+                    </div>
+                    <div className="text-[11px] text-zinc-400">{item.name}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-emerald-50">
+                    ¥{item.cost}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-7">
+            <h3 className="text-sm font-semibold text-emerald-100 mb-2">
+              今日花費小記錄
+            </h3>
+            <div className="bg-zinc-900/80 border border-zinc-700/80 rounded-2xl p-3 space-y-2 grain">
+              <input
+                type="text"
+                placeholder="例如：得意世界咖啡、磁器口小吃..."
+                value={logNote}
+                onChange={(e) => setLogNote(e.target.value)}
+                className="w-full bg-black/40 border border-zinc-700 rounded-lg px-3 py-1.5 text-[12px] text-emerald-100 focus:outline-none focus:border-emerald-400"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder="金額（CNY）"
+                  value={logAmount}
+                  onChange={(e) => setLogAmount(e.target.value)}
+                  className="flex-1 bg-black/40 border border-zinc-700 rounded-lg px-3 py-1.5 text-[12px] text-emerald-100 focus:outline-none focus:border-emerald-400"
+                />
+                <button
+                  onClick={addLog}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-900 text-[12px] font-semibold hover:bg-emerald-400"
+                >
+                  ＋ 記一筆
+                </button>
+              </div>
+
+              {logs.length > 0 && (
+                <div className="mt-2 text-[11px] text-zinc-400 space-y-1">
+                  {logs.map((log, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span>
+                        • {log.note}（¥{log.amount}）
+                      </span>
+                      <button
+                        onClick={() => deleteLog(idx)}
+                        className="text-zinc-500 hover:text-amber-300"
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  ))}
+                  <div className="pt-1 text-emerald-200">
+                    小記錄合計：¥{extraSpent}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-emerald-100 mb-2">
+              今日心情一句話
+            </h3>
+            <textarea
+              rows="2"
+              placeholder="今天在山城，最想記住的一句話 / 一個畫面是..."
+              value={journal?.mood || ""}
+              onChange={handleMoodChange}
+              className="w-full bg-zinc-900/80 border border-zinc-700/80 rounded-2xl px-3 py-2 text-[12px] text-emerald-100 focus:outline-none focus:border-emerald-400 grain"
+            ></textarea>
+          </div>
+        </div>
+      );
+    };
+
+    const GuideView = ({ data, setData }) => {
+      const { truths, guideExtras } = data;
+
+      const toggleTruth = (index) => {
+        setData(prev => {
+          const t = [...prev.truths];
+          t[index] = { ...t[index], checked: !t[index].checked };
+          return { ...prev, truths: t };
+        });
+      };
+
+      return (
+        <div className="pt-7 px-6 flex-1 overflow-y-auto pb-10 no-scrollbar">
+          <h2 className="text-xl font-semibold text-emerald-50 mb-1">重慶旅遊大實話</h2>
+          <p className="text-[11px] text-zinc-500 mb-6">
+            把攻略變成幾張口袋卡，邊走邊翻，比手機截圖還好用。
+          </p>
+
+          <div className="space-y-4 mb-7">
+            {truths.map((truth, idx) => (
+              <div
+                key={idx}
+                className={`p-4 rounded-2xl border grain cursor-pointer ${
+                  truth.type === "danger"
+                    ? "bg-gradient-to-br from-[#3b1f1c] via-[#251312] to-[#140c0b] border-red-700/70"
+                    : truth.type === "warning"
+                    ? "bg-gradient-to-br from-[#3b2a15] via-[#241a10] to-[#140f0a] border-amber-700/70"
+                    : "bg-gradient-to-br from-[#041016] via-[#050b10] to-[#020608] border-emerald-700/70"
+                }`}
+                onClick={() => toggleTruth(idx)}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm">
+                    {truth.type === "danger"
+                      ? "⛔"
+                      : truth.type === "warning"
+                      ? "⚠️"
+                      : "ℹ️"}
+                  </span>
+                  <h3
+                    className={`text-sm font-semibold ${
+                      truth.type === "danger"
+                        ? "text-amber-100"
+                        : truth.type === "warning"
+                        ? "text-amber-50"
+                        : "text-emerald-50"
+                    }`}
+                  >
+                    {truth.title}
+                  </h3>
+                  <span className="ml-auto text-[10px] text-emerald-100/80">
+                    {truth.checked ? "已記得 ✔" : "點一下標記已記得"}
+                  </span>
+                </div>
+                <p
+                  className={`text-[12px] leading-relaxed ${
+                    truth.type === "danger"
+                      ? "text-amber-200/90"
+                      : truth.type === "warning"
+                      ? "text-amber-100/90"
+                      : "text-emerald-100/90"
+                  }`}
+                >
+                  {truth.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <SectionList
+            title="羅漢寺怎麼逛才不心慌？"
+            subtitle="路線順著走、該莊重的地方就安靜一點。"
+            color="emerald"
+            items={guideExtras.luohansi}
+          />
+
+          <SectionList
+            title="下浩里夜逛小提醒"
+            subtitle="老階梯、老房子、老路縫，記得看腳下。"
+            color="amber"
+            items={guideExtras.xiahaoli}
+          />
+
+          <SectionList
+            title="重慶喝什麼？"
+            subtitle="把胃留一點給酸奶和在地飲料。"
+            color="emerald"
+            items={guideExtras.drinks}
+          />
+
+          <SectionList
+            title="重慶吃什麼？（火鍋之外）"
+            subtitle="豆花、小麵、洋芋，都是記憶裡的味道。"
+            color="emerald"
+            items={guideExtras.foods}
+          />
+
+          <div className="mt-6 text-[10px] text-zinc-500 text-center">
+            資料整理自：重慶自由行 PDF 筆記 / 小紅書備忘
+          </div>
+        </div>
+      );
+    };
+
+    const SectionList = ({ title, subtitle, items, color }) => {
+      const colorClassTitle =
+        color === "amber" ? "text-amber-100" : "text-emerald-100";
+      const bullet =
+        color === "amber" ? "◆" : "●";
+
+      return (
+        <div className="mb-7">
+          <div className="mb-2">
+            <h3 className={`text-sm font-semibold ${colorClassTitle}`}>{title}</h3>
+            <p className="text-[11px] text-zinc-500">{subtitle}</p>
+          </div>
+          <ul className="space-y-1.5">
+            {items.map((t, i) => (
+              <li
+                key={i}
+                className="text-[12px] text-zinc-300 flex gap-2"
+              >
+                <span className="mt-[3px] text-[9px] text-zinc-500">{bullet}</span>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    };
+
+    const NavButton = ({ icon, label, id, activeTab, setTab }) => (
+      <button
+        onClick={() => setTab(id)}
+        className={`flex flex-col items-center gap-1 transition-all duration-300 ${
+          activeTab === id ? "text-emerald-100 -translate-y-1" : "text-zinc-500"
+        }`}
+      >
+        <div
+          className={`p-2 rounded-full text-base ${
+            activeTab === id
+              ? "bg-emerald-400/90 text-slate-900 shadow-lg shadow-emerald-500/50"
+              : "bg-transparent"
+          }`}
+        >
+          {icon}
+        </div>
+        <span className="text-[10px] font-medium tracking-wide">{label}</span>
+      </button>
+    );
+
+    const App = () => {
+      const [activeTab, setActiveTab] = useState("itinerary");
+      const [activeDay, setActiveDay] = useState(0);
+
+      const [data, setData] = useState(() => {
+        try {
+          const saved = window.localStorage.getItem("cq-trip-v1");
+          return saved ? JSON.parse(saved) : initialTripData;
+        } catch (e) {
+          return initialTripData;
+        }
+      });
+
+      React.useEffect(() => {
+        try {
+          window.localStorage.setItem("cq-trip-v1", JSON.stringify(data));
+        } catch (e) {}
+      }, [data]);
+
+      const renderContent = () => {
+        switch (activeTab) {
+          case "itinerary":
+            return (
+              <ItineraryView
+                data={data}
+                setData={setData}
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+              />
+            );
+          case "shopping":
+            return <ShoppingView data={data} setData={setData} />;
+          case "budget":
+            return <BudgetView data={data} setData={setData} />;
+          case "guide":
+            return <GuideView data={data} setData={setData} />;
+          default:
+            return (
+              <ItineraryView
+                data={data}
+                setData={setData}
+                activeDay={activeDay}
+                setActiveDay={setActiveDay}
+              />
+            );
+        }
+      };
+
+      return (
+        <div className="flex justify-center min-h-screen py-6">
+          <div className="w-full max-w-md bg-[#050709] border border-zinc-800/80 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.75)] min-h-[640px] relative overflow-hidden flex flex-col grain">
+            <div className="relative h-[260px] bg-black overflow-hidden">
+              <img
+                src="https://i.ibb.co/3yLY2yW1/Gemini-Generated-Image-xlrbfyxlrbfyxlrb.png"
+                alt="Chongqing Night Alley"
+                className="absolute inset-0 w-full h-full object-cover opacity-70"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-[#02070a]/80 to-transparent"></div>
+
+              <div className="absolute top-5 right-5 flex gap-2 z-10 text-emerald-50">
+                <button
+                  onClick={() => setActiveTab("guide")}
+                  className="w-9 h-9 rounded-full bg-black/45 border border-emerald-400/60 flex items-center justify-center text-sm backdrop-blur-md"
+                  title="避坑筆記"
+                >
+                  ℹ️
+                </button>
+              </div>
+
+              <div className="absolute bottom-14 left-5 right-5 z-10 text-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-1 bg-emerald-400/95 text-[10px] font-semibold text-slate-900 rounded tracking-[0.18em]">
+                    MOUNTAIN CITY NIGHTS
+                  </span>
+                  <span className="text-[10px] text-emerald-100/80 tracking-[0.2em] uppercase">
+                    {data.dateRange}
+                  </span>
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight text-shadow-lg">
+                  {data.title}
+                </h1>
+                <p className="text-emerald-100/90 text-[13px] mt-1 flex items-center gap-1.5">
+                  <span>📍</span>
+                  <span>{data.subtitle}</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-t from-black via-[#05090c] to-[#05060a] flex-1 rounded-t-[2rem] -mt-6 z-20 shadow-[0_-18px_45px_rgba(0,0,0,0.85)] pb-24 flex flex-col border-t border-emerald-900/40">
+              {renderContent()}
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-black/85 backdrop-blur-xl border-t border-zinc-800 flex items-center justify-around z-30">
+              <NavButton icon="📍" label="行程" id="itinerary" activeTab={activeTab} setTab={setActiveTab} />
+              <NavButton icon="🛍️" label="購物" id="shopping" activeTab={activeTab} setTab={setActiveTab} />
+              <NavButton icon="💸" label="預算" id="budget" activeTab={activeTab} setTab={setActiveTab} />
+              <NavButton icon="🌃" label="避坑" id="guide" activeTab={activeTab} setTab={setActiveTab} />
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
